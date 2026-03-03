@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Olam Live Prices - Quick Guide</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc; color: #333; margin: 0; padding: 40px; display: flex; justify-content: center; }
+    .infographic { width: 800px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #005A9C 0%, #0081C6 100%); color: white; padding: 30px; text-align: center; }
+    .header h1 { margin: 0 0 10px 0; font-size: 32px; letter-spacing: 1px; }
+    .header p { margin: 0; font-size: 16px; opacity: 0.9; }
+    .section { padding: 30px; border-bottom: 2px dashed #eee; }
+    .step { display: flex; align-items: flex-start; margin-bottom: 20px; }
+    .step-number { background: #005A9C; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; flex-shrink: 0; margin-right: 20px; }
+    .step-content h3 { margin: 0 0 5px 0; color: #005A9C; }
+    .step-content p { margin: 0; color: #555; line-height: 1.5; }
+    .formula-box { background: #eef7e6; border: 2px solid #5cb85c; border-radius: 8px; padding: 20px; text-align: left; margin-top: 15px; }
+    .code { font-family: 'Consolas', 'Courier New', monospace; font-size: 24px; color: #005A9C; font-weight: bold; display: block; margin-bottom: 10px; }
+    .param { color: #e67e22; }
+    .footer { background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #777; }
+    .grid { display: flex; gap: 20px; }
+    .column { flex: 1; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+    .tag { background: #ddd; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-block; margin: 2px; }
+    .btn { display: inline-block; padding: 10px 20px; background: #e67e22; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 12px; transition: background 0.2s; }
+    .btn:hover { background: #d67118; }
+  </style>
+</head>
+<body>
+
+<div class="infographic">
+  <div class="header">
+    <h1>Olam Live Prices in Excel</h1>
+    <p>Stream real-time commodity data directly into your cells. No clicking refresh.</p>
+  </div>
+
+  <div class="section">
+    <h2 style="margin-top: 0; color: #333;">Part 1: One-Time Setup</h2>
+    
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h3>Get the Configuration File</h3>
+        <p>Download the <b>add_in.xml</b> configuration file to your computer below:</p>
+        <a href="add_in.xml" download="add_in.xml" class="btn"> Download add_in.xml</a>
+      </div>
+    </div>
+    
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h3>Upload to Excel</h3>
+        <p>Open Excel Online. Go to the <b>Insert</b> tab on the ribbon > Click <b>Add-ins</b> (or My Add-ins) > <b>Upload My Add-in</b> > Select the <b>add_in.xml</b> file you just downloaded.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 style="margin-top: 0; color: #333;">Part 2: The Magic Formula</h2>
+    <p style="color: #666; margin-bottom: 20px;">The Add-in works entirely in the background. Just type this formula into any blank cell:</p>
+    
+    <div class="formula-box">
+      <span class="code">=OLAM.LIVEPRICE(<span class="param">"ticker"</span>, <span class="param">"field"</span>)</span>
+    </div>
+
+    <div class="grid" style="margin-top: 20px;">
+      <div class="column">
+        <h4 style="margin-top: 0;">1. Valid Tickers</h4>
+        <p style="font-size: 13px; color: #555;">Use exact Bloomberg IDs or internal API keys (Case-insensitive):</p>
+        <div>
+          <span class="tag">USDJPY</span> <span class="tag">CCH6</span>
+          <span class="tag">cc1</span> <span class="tag">usd-jpy</span>
+        </div>
+      </div>
+      <div class="column">
+        <h4 style="margin-top: 0;">2. Valid Fields</h4>
+        <p style="font-size: 13px; color: #555;">The data points you can pull:</p>
+        <div>
+          <span class="tag">MID</span> <span class="tag">BID</span> <span class="tag">ASK</span>
+          <span class="tag">LAST_PRICE</span> <span class="tag">VOLUME</span>
+          <span class="tag">OPEN</span> <span class="tag">HIGH</span> <span class="tag">LOW</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="background: #fcfcfc;">
+    <h3 style="margin-top: 0;">Real Examples in Action</h3>
+    <p style="font-family: Consolas, monospace; background: white; padding: 10px; border: 1px solid #ddd; border-left: 4px solid #005A9C;">=OLAM.LIVEPRICE("cc1", "MID")</p>
+    <p style="font-family: Consolas, monospace; background: white; padding: 10px; border: 1px solid #ddd; border-left: 4px solid #005A9C;">=OLAM.LIVEPRICE("USDJPY", "ASK")</p>
+    
+    <p style="font-size: 14px; color: #777; margin-top: 15px;"><i> Note: The cell might temporarily say <b>#BUSY!</b> or <b>Waiting...</b> while it connects. It will then display the live streaming price!</i></p>
+  </div>
+  
+  <div class="footer">
+    Developed for Olam International &bull; Powered by Infinity Streaming WebSocket
+  </div>
+</div>
+
+</body>
+</html>
