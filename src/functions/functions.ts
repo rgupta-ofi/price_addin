@@ -40,6 +40,8 @@ const secIdToTicker = new Map<string, string>();
 
 /** Case-insensitive lookup: "CC1" → "cc1" */
 const canonicalKeys = new Map<string, string>();
+// Seed the special key so resolveTickerKey works
+canonicalKeys.set("_ALL_TICKERS_", "_ALL_TICKERS_");
 
 
 // ─── Optimised Lookup & Update ──────────────────────────────────────────────
@@ -49,9 +51,15 @@ const canonicalKeys = new Map<string, string>();
  * Returns undefined if not found in our known data.
  */
 function resolveTickerKey(input: string): string | undefined {
+  if (input === "_ALL_TICKERS_") return "_ALL_TICKERS_";
+
   const upper = input.toUpperCase();
   // 1. Try case-insensitive match against known keys
-  if (canonicalKeys.has(upper)) return canonicalKeys.get(upper);
+  // Note: We intentionally skip the special _ALL_TICKERS_ key here if user typed it manually
+  if (canonicalKeys.has(upper)) {
+     const k = canonicalKeys.get(upper);
+     if (k !== "_ALL_TICKERS_") return k;
+  }
   // 2. Try Security ID match
   if (secIdToTicker.has(upper)) return secIdToTicker.get(upper);
   return undefined;
@@ -144,6 +152,19 @@ function onSnapshot(snapshot: LiveDataSnapshot): void {
       }
     }
   }
+
+  // 4. Update any special "TICKERS" function calls
+  const tickerWatchers = cellsByKey.get("_ALL_TICKERS_");
+  if (tickerWatchers) {
+    // Only rebuild string if we have new keys in snapshot (implies possible new tickers)
+    // Or just update anyway since it's infrequent relative to price ticks
+    const allKeys = Array.from(canonicalKeys.values())
+        .filter(k => k !== "_ALL_TICKERS_")
+        .sort().join(", ");
+    for (const handler of tickerWatchers) {
+      handler.setResult(allKeys);
+    }
+  }
 }
 
 // ─── Service lifecycle ──────────────────────────────────────────────────────
@@ -192,12 +213,19 @@ function startStreaming(
     set.add(handler);
     
     // Provide immediate value if available
-    const rec = latestData[key];
-    if (rec) {
-      pushValueToHandler(handler, key);
+    if (key === "_ALL_TICKERS_") {
+        const allKeys = Array.from(canonicalKeys.values())
+             .filter(k => k !== "_ALL_TICKERS_")
+             .sort().join(", ");
+        handler.setResult(allKeys || "Waiting for data...");
     } else {
-       // We found the key but have no data yet (? should not happen if key is resolved, unless structure is partial)
-       invocation.setResult("Waiting... (Data pending)");
+        const rec = latestData[key];
+        if (rec) {
+          pushValueToHandler(handler, key);
+        } else {
+           // We found the key but have no data yet (? should not happen if key is resolved, unless structure is partial)
+           invocation.setResult("Waiting... (Data pending)");
+        }
     }
   } else {
     // Key not known yet, add to pending and show current WS info
@@ -255,9 +283,25 @@ function getFields(
   startStreaming(ticker, "_ALL_KEYS_", invocation as any);
 }
 
+/**
+ * @customfunction TICKERS
+ * @streaming
+ * @description Returns a list of all commodity tickers currently streaming (e.g., CC1, USDJPY).
+ * @param {CustomFunctions.StreamingInvocation<string>} invocation
+ */
+function getTickers(
+  invocation: CustomFunctions.StreamingInvocation<string>
+): void {
+  // Use a special invalid ticker name and field to signal "all tickers" request
+  // This will hook into the pushValueToHandler special check we will add
+  // We use "_ALL_TICKERS_" as the ticker name, registered in canonicalKeys
+  startStreaming("_ALL_TICKERS_", "_ALL_TICKERS_", invocation as any);
+}
+
 // Register
 CustomFunctions.associate("LIVEPRICE", livePrice);
 CustomFunctions.associate("FIELDS", getFields);
+CustomFunctions.associate("TICKERS", getTickers);
 
 // Initialize Office.js
 Office.onReady(() => {
