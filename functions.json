@@ -43,6 +43,19 @@
       "result": {
         "type": "string"
       }
+    },
+    {
+      "description": "Returns a list of all commodity tickers currently streaming (e.g., CC1, USDJPY).",
+      "id": "TICKERS",
+      "name": "TICKERS",
+      "options": {
+        "stream": true,
+        "cancelable": true
+      },
+      "parameters": [],
+      "result": {
+        "type": "string"
+      }
     }
   ]
 }
