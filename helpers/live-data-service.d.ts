@@ -27,9 +27,12 @@ export interface TickerRecord {
 }
 export type LiveDataSnapshot = Record<string, TickerRecord>;
 export type LiveDataListener = (snapshot: LiveDataSnapshot) => void;
+export type StatusListener = (status: string) => void;
 declare class LiveDataService {
     private ws;
     private listeners;
+    private statusListeners;
+    private currentStatus;
     private refCount;
     private retryCount;
     private reconnectTimer;
@@ -38,6 +41,10 @@ declare class LiveDataService {
     private bufferDirty;
     private flushTimer;
     constructor();
+    getStatus(): string;
+    addStatusListener(fn: StatusListener): void;
+    removeStatusListener(fn: StatusListener): void;
+    private setStatus;
     acquire(): void;
     release(): void;
     subscribe(fn: LiveDataListener): void;
