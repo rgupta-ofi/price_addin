@@ -51,6 +51,13 @@ Pick any blank cell and type:
 * To get the live Ask price of USD/JPY:
   =INFINITY.LIVEPRICE("USDJPY", "ASK")
 
+* **To see all available Tickers/Symbols:**
+  =INFINITY.TICKERS()
+  *(This will list everything you can stream)*
+
+* **To see all fields for a specific Ticker:**
+  =INFINITY.FIELDS("CC1")
+
 ### What to Expect
 1. When you hit Enter, the cell might momentarily display #BUSY! or Waiting... as it connects to the live server.
 2. Within a second, it will display the live number.
