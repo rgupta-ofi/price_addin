@@ -24,6 +24,25 @@
       "result": {
         "type": "any"
       }
+    },
+    {
+      "description": "Returns a list of all available data fields for a ticker.",
+      "id": "FIELDS",
+      "name": "FIELDS",
+      "options": {
+        "stream": true,
+        "cancelable": true
+      },
+      "parameters": [
+        {
+          "description": "The ticker key (e.g. \"cc1\", \"usd-jpy\") or security ID (e.g. \"CCH6\", \"USDJPY\").",
+          "name": "ticker",
+          "type": "string"
+        }
+      ],
+      "result": {
+        "type": "string"
+      }
     }
   ]
 }
