@@ -20,61 +20,120 @@ interface CellHandler {
   field: string;
 }
 
-/** All active streaming cells, keyed by a unique random ID */
+/** All active streaming cells, keyed by a unique random ID (for cancellation) */
 const cells = new Map<string, CellHandler>();
+
+/** Cells grouped by their resolved canonical ticker key (e.g. "cc1") */
+const cellsByKey = new Map<string, Set<CellHandler>>();
+
+/** Cells that haven't been resolved to a canonical key yet */
+const pendingCells = new Set<CellHandler>();
 
 let connected = false;
 let listenerAttached = false;
 
-/** Accumulated latest values for every ticker we've ever seen, so new formulas
- *  can immediately display the most recent value instead of waiting for the next WS push. */
+/** Accumulated latest values for every ticker we've ever seen */
 const latestData: Record<string, TickerRecord> = {};
 
 /** Reverse lookup: Security ID (e.g. "USDJPY") → ticker key (e.g. "usd-jpy") */
-const secIdToTicker: Record<string, string> = {};
+const secIdToTicker = new Map<string, string>();
 
-// ─── Snapshot listener ──────────────────────────────────────────────────────
+/** Case-insensitive lookup: "CC1" → "cc1" */
+const canonicalKeys = new Map<string, string>();
 
-function onSnapshot(snapshot: LiveDataSnapshot): void {
-  // Accumulate latest data and build reverse lookup
-  for (const [key, rec] of Object.entries(snapshot)) {
-    latestData[key] = rec;
-    const secId = rec.result?.ID_BB_SEC_NUMBER_DESCRIPTION_RT;
-    if (secId) secIdToTicker[secId.toUpperCase()] = key;
-  }
 
-  // Push values to each active cell
-  cells.forEach((handler) => {
-    pushValue(handler);
-  });
-}
+// ─── Optimised Lookup & Update ──────────────────────────────────────────────
 
-/** Resolve a user-provided ticker to its internal key */
+/** 
+ * Try to resolve a user-provided ticker string to a canonical key.
+ * Returns undefined if not found in our known data.
+ */
 function resolveTickerKey(input: string): string | undefined {
   const upper = input.toUpperCase();
-  // Direct match by WebSocket key (e.g. "cc1", "usd-jpy")
-  for (const key of Object.keys(latestData)) {
-    if (key.toUpperCase() === upper) return key;
-  }
-  // Match by Security ID (e.g. "USDJPY", "CCH6")
-  return secIdToTicker[upper];
+  // 1. Try case-insensitive match against known keys
+  if (canonicalKeys.has(upper)) return canonicalKeys.get(upper);
+  // 2. Try Security ID match
+  if (secIdToTicker.has(upper)) return secIdToTicker.get(upper);
+  return undefined;
 }
 
-/** Push a value to a single cell handler */
-function pushValue(handler: CellHandler): void {
+/** 
+ * Register a cell. Tries to resolve its key immediately. 
+ * If successful, adds to cellsByKey. If not, adds to pendingCells.
+ */
+function registerCell(handler: CellHandler) {
   const key = resolveTickerKey(handler.ticker);
-  if (!key) return;
+  if (key) {
+    let set = cellsByKey.get(key);
+    if (!set) {
+      set = new Set();
+      cellsByKey.set(key, set);
+    }
+    set.add(handler);
+    // Push immediate data if available
+    pushValueToHandler(handler, key);
+  } else {
+    pendingCells.add(handler);
+    handler.setResult("Waiting...");
+  }
+}
+
+/** Update a specific handler with data for a known key */
+function pushValueToHandler(handler: CellHandler, key: string) {
   const rec = latestData[key];
   if (!rec) return;
 
   const fieldUpper = handler.field.toUpperCase();
-  let value: string | number | undefined;
-
   // Try exact casing first, then uppercase
-  value = (rec.result?.[handler.field] ?? rec.result?.[fieldUpper]) as string | number | undefined;
+  const val = (rec.result?.[handler.field] ?? rec.result?.[fieldUpper]) as string | number | undefined;
 
-  if (value !== undefined && value !== null) {
-    handler.setResult(value);
+  if (val !== undefined && val !== null) {
+    handler.setResult(val);
+  }
+}
+
+// ─── Snapshot Listener ──────────────────────────────────────────────────────
+
+function onSnapshot(snapshot: LiveDataSnapshot): void {
+  // 1. Process new data structure (discover new keys/IDs)
+  for (const [key, rec] of Object.entries(snapshot)) {
+    latestData[key] = rec;
+    canonicalKeys.set(key.toUpperCase(), key);
+    
+    // Check for ID_BB_SEC_NUMBER_DESCRIPTION_RT
+    const secId = rec.result?.ID_BB_SEC_NUMBER_DESCRIPTION_RT;
+    if (secId && typeof secId === 'string') {
+      secIdToTicker.set(secId.toUpperCase(), key);
+    }
+  }
+
+  // 2. Process pending cells (maybe we can resolve them now?)
+  if (pendingCells.size > 0) {
+    for (const handler of pendingCells) {
+      const key = resolveTickerKey(handler.ticker);
+      if (key) {
+        pendingCells.delete(handler);
+        let set = cellsByKey.get(key);
+        if (!set) {
+          set = new Set();
+          cellsByKey.set(key, set);
+        }
+        set.add(handler);
+        // We'll update it in step 3 if it's in the snapshot, 
+        // OR we should update it now from latestData just in case
+        pushValueToHandler(handler, key);
+      }
+    }
+  }
+
+  // 3. Efficient Update: Only update cells for keys that are IN THIS SNAPSHOT
+  for (const key of Object.keys(snapshot)) {
+    const set = cellsByKey.get(key);
+    if (set) {
+      for (const handler of set) {
+        pushValueToHandler(handler, key);
+      }
+    }
   }
 }
 
@@ -113,16 +172,39 @@ function livePrice(
   const handler: CellHandler = { setResult: invocation.setResult, ticker, field };
   cells.set(id, handler);
 
-  // If we already have data for this ticker, show it immediately
-  const existing = resolveTickerKey(ticker);
-  if (existing && latestData[existing]) {
-    pushValue(handler);
+  // Try to resolve and register immediately
+  const key = resolveTickerKey(ticker);
+  
+  if (key) {
+    let set = cellsByKey.get(key);
+    if (!set) {
+      set = new Set();
+      cellsByKey.set(key, set);
+    }
+    set.add(handler);
+    
+    // Provide immediate value if available
+    const rec = latestData[key];
+    if (rec) {
+      pushValueToHandler(handler, key);
+    } else {
+       invocation.setResult("Waiting...");
+    }
   } else {
-    invocation.setResult("Waiting…");
+    // Key not known yet, add to pending
+    pendingCells.add(handler);
+    invocation.setResult("Waiting...");
   }
 
   invocation.onCanceled = () => {
     cells.delete(id);
+    pendingCells.delete(handler);
+    
+    // Remove from canonical map (scan all keys)
+    for (const set of cellsByKey.values()) {
+      if (set.delete(handler)) break;
+    }
+
     if (cells.size === 0 && connected) {
       liveDataService.release();
       connected = false;
