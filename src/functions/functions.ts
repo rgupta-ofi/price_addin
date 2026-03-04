@@ -151,6 +151,13 @@ function onSnapshot(snapshot: LiveDataSnapshot): void {
 function ensureService(): void {
   if (!listenerAttached) {
     liveDataService.subscribe(onSnapshot);
+    liveDataService.addStatusListener((status) => {
+        // Broadcast status to all pending cells
+        for (const handler of pendingCells) {
+            handler.setResult(`Waiting... (${status})`);
+        }
+    });
+
     listenerAttached = true;
   }
   if (!connected) {
@@ -189,12 +196,13 @@ function startStreaming(
     if (rec) {
       pushValueToHandler(handler, key);
     } else {
-       invocation.setResult("Waiting...");
+       // We found the key but have no data yet (? should not happen if key is resolved, unless structure is partial)
+       invocation.setResult("Waiting... (Data pending)");
     }
   } else {
-    // Key not known yet, add to pending
+    // Key not known yet, add to pending and show current WS info
     pendingCells.add(handler);
-    invocation.setResult("Waiting...");
+    invocation.setResult(`Waiting... (${liveDataService.getStatus()})`);
   }
 
   invocation.onCanceled = () => {

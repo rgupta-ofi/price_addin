@@ -34,12 +34,15 @@ export interface TickerRecord {
 
 export type LiveDataSnapshot = Record<string, TickerRecord>;
 export type LiveDataListener = (snapshot: LiveDataSnapshot) => void;
+export type StatusListener = (status: string) => void;
 
 // ─── LiveDataService ────────────────────────────────────────────────────────
 
 class LiveDataService {
   private ws: WebSocket | null = null;
   private listeners = new Set<LiveDataListener>();
+  private statusListeners = new Set<StatusListener>();
+  private currentStatus = "Disconnected";
   private refCount = 0;
   private retryCount = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -56,6 +59,25 @@ class LiveDataService {
   }
 
   // ─── Public API ──────────────────────────────────────────────────────────
+
+  getStatus(): string {
+    return this.currentStatus;
+  }
+
+  addStatusListener(fn: StatusListener): void {
+    this.statusListeners.add(fn);
+    fn(this.currentStatus);
+  }
+
+  removeStatusListener(fn: StatusListener): void {
+    this.statusListeners.delete(fn);
+  }
+
+  private setStatus(status: string): void {
+    if (this.currentStatus === status) return;
+    this.currentStatus = status;
+    this.statusListeners.forEach(fn => fn(status));
+  }
 
   acquire(): void {
     this.clearCloseTimer();
@@ -90,6 +112,7 @@ class LiveDataService {
     const base = Config.serverUrl.replace(/^http/, "ws");
     const url = `${base}${Config.wsPath}`;
     console.log(`[WS] Connecting to ${url}`);
+    this.setStatus(`Connecting to ${url}`);
 
     const ws = new WebSocket(url);
     this.ws = ws;
@@ -98,6 +121,7 @@ class LiveDataService {
       if (this.ws !== ws) return;
       this.retryCount = 0;
       console.log("[WS] Connected");
+      this.setStatus("Connected");
     };
 
     ws.onmessage = (ev: MessageEvent) => {
@@ -105,7 +129,9 @@ class LiveDataService {
       let data: Record<string, unknown>;
       try { data = JSON.parse(ev.data); } catch { return; }
       if (!data || typeof data !== "object" || Array.isArray(data) || "type" in data) return;
-
+      
+      this.setStatus("Receiving Data");
+      
       const entries = Object.entries(data).filter(
         ([, v]) => v && typeof v === "object" && !Array.isArray(v) && "result" in (v as object)
       ) as [string, TickerRecord][];
@@ -118,6 +144,7 @@ class LiveDataService {
     };
 
     const onFail = () => {
+      this.setStatus("Error / Reconnecting");
       if (this.ws !== ws) { ws.close(); return; }
       this.ws = null;
       ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
@@ -149,6 +176,8 @@ class LiveDataService {
     const delay = Math.min(Config.reconnect.initialDelayMs * 2 ** this.retryCount, Config.reconnect.maxDelayMs);
     this.retryCount += 1;
     console.log(`[WS] Reconnecting in ${delay}ms (attempt ${this.retryCount})`);
+    this.setStatus(`Reconnecting in ${delay/1000}s`);
+
     this.reconnectTimer = setTimeout(() => { this.reconnectTimer = null; this.ensureConnected(); }, delay);
   }
 
@@ -189,6 +218,7 @@ class LiveDataService {
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     if (this.closeTimer) { clearTimeout(this.closeTimer); this.closeTimer = null; }
     if (this.ws) { this.ws.close(); this.ws = null; }
+    this.setStatus("Offline");
   }
 }
 
