@@ -236,14 +236,15 @@ function livePrice(
  * @streaming
  * @description Returns a list of all available data fields for a ticker.
  * @param {string} ticker The ticker key (e.g. "cc1", "usd-jpy") or security ID (e.g. "CCH6", "USDJPY").
- * @param {CustomFunctions.StreamingInvocation<string | number>} invocation
+ * @param {CustomFunctions.StreamingInvocation<string>} invocation
  */
 function getFields(
   ticker: string,
-  invocation: CustomFunctions.StreamingInvocation<string | number>
+  invocation: CustomFunctions.StreamingInvocation<string>
 ): void {
   // Use a special internal field name to signal "all keys" request
-  startStreaming(ticker, "_ALL_KEYS_", invocation);
+  // Cast invocation to any to allow passing to shared startStreaming which handles string|number
+  startStreaming(ticker, "_ALL_KEYS_", invocation as any);
 }
 
 // Register
