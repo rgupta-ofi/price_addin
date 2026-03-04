@@ -1,5 +1,5 @@
 /**
- * Centralized configuration for the Olam Live Prices Excel Add-in.
+ * Centralized configuration for the Infinity Live Prices Excel Add-in.
  * Values are injected from .env at build time via dotenv-webpack.
  */
 export declare const Config: {

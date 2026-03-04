@@ -7,14 +7,14 @@
   xsi:type="TaskPaneApp">
 
   <Id>af8e3b00-1234-4567-89ab-cdef01234567</Id>
-  <Version>2.0.0.0</Version>
-  <ProviderName>Olam International</ProviderName>
+  <Version>2.1.0.0</Version>
+  <ProviderName>Infinity</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Olam Live Prices"/>
-  <Description DefaultValue="Use =OLAM.LIVEPRICE() to stream live commodity prices into any cell."/>
+  <DisplayName DefaultValue="Infinity Live Prices"/>
+  <Description DefaultValue="Use =INFINITY.LIVEPRICE() to stream live commodity prices into any cell."/>
   <IconUrl DefaultValue="https://rgupta-ofi.github.io/price_addin/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://rgupta-ofi.github.io/price_addin/assets/icon-80.png"/>
-  <SupportUrl DefaultValue="https://www.olamgroup.com"/>
+  <SupportUrl DefaultValue="https://github.com/rgupta-ofi/price_addin"/>
 
   <AppDomains>
     <AppDomain>https://infinity-qa.ofi.ai</AppDomain>
@@ -68,7 +68,7 @@
         <bt:Url id="Functions.Metadata.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.json"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Functions.Namespace" DefaultValue="OLAM"/>
+        <bt:String id="Functions.Namespace" DefaultValue="INFINITY"/>
       </bt:ShortStrings>
     </Resources>
   </VersionOverrides>
