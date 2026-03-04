@@ -253,5 +253,5 @@ CustomFunctions.associate("FIELDS", getFields);
 
 // Initialize Office.js
 Office.onReady(() => {
-  console.log("Infinity Custom Functions loaded - v3");
+  console.log("Infinity Custom Functions loaded - v4");
 });
