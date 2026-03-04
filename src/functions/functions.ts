@@ -83,6 +83,15 @@ function pushValueToHandler(handler: CellHandler, key: string) {
   const rec = latestData[key];
   if (!rec) return;
 
+  if (handler.field === "_ALL_KEYS_") {
+    if (rec.result) {
+      // Sort keys for consistent display
+      const keys = Object.keys(rec.result).sort().join(", ");
+      handler.setResult(keys);
+    }
+    return;
+  }
+
   const fieldUpper = handler.field.toUpperCase();
   // Try exact casing first, then uppercase
   const val = (rec.result?.[handler.field] ?? rec.result?.[fieldUpper]) as string | number | undefined;
@@ -152,15 +161,7 @@ function ensureService(): void {
 
 // ─── Custom Functions ───────────────────────────────────────────────────────
 
-/**
- * @customfunction LIVEPRICE
- * @streaming
- * @description Returns a live-streaming price field for the given ticker.
- * @param {string} ticker The ticker key (e.g. "cc1", "usd-jpy") or security ID (e.g. "CCH6", "USDJPY").
- * @param {string} field The field to return: MID, BID, ASK, LAST_PRICE, OPEN, HIGH, LOW, VOLUME.
- * @param {CustomFunctions.StreamingInvocation<string | number>} invocation
- */
-function livePrice(
+function startStreaming(
   ticker: string,
   field: string,
   invocation: CustomFunctions.StreamingInvocation<string | number>
@@ -212,8 +213,42 @@ function livePrice(
   };
 }
 
+// ─── Custom Functions ───────────────────────────────────────────────────────
+
+/**
+ * @customfunction LIVEPRICE
+ * @streaming
+ * @description Returns a live-streaming price field for the given ticker.
+ * @param {string} ticker The ticker key (e.g. "cc1", "usd-jpy") or security ID (e.g. "CCH6", "USDJPY").
+ * @param {string} field The field to return: MID, BID, ASK, LAST_PRICE, OPEN, HIGH, LOW, VOLUME.
+ * @param {CustomFunctions.StreamingInvocation<string | number>} invocation
+ */
+function livePrice(
+  ticker: string,
+  field: string,
+  invocation: CustomFunctions.StreamingInvocation<string | number>
+): void {
+  startStreaming(ticker, field, invocation);
+}
+
+/**
+ * @customfunction FIELDS
+ * @streaming
+ * @description Returns a list of all available data fields for a ticker.
+ * @param {string} ticker The ticker key (e.g. "cc1", "usd-jpy") or security ID (e.g. "CCH6", "USDJPY").
+ * @param {CustomFunctions.StreamingInvocation<string>} invocation
+ */
+function getFields(
+  ticker: string,
+  invocation: CustomFunctions.StreamingInvocation<string>
+): void {
+  // Use a special internal field name to signal "all keys" request
+  startStreaming(ticker, "_ALL_KEYS_", invocation);
+}
+
 // Register
 CustomFunctions.associate("LIVEPRICE", livePrice);
+CustomFunctions.associate("FIELDS", getFields);
 
 // Initialize Office.js
 Office.onReady(() => {
