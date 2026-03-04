@@ -1,7 +1,7 @@
 {
-  "name": "olam-price-addin",
+  "name": "infinity-price-addin",
   "version": "1.0.0",
-  "description": "Excel Add-in — use =OLAM.LIVEPRICE() to stream live commodity prices",
+  "description": "Excel Add-in — use =INFINITY.LIVEPRICE() to stream live commodity prices",
   "main": "src/functions/functions.ts",
   "scripts": {
     "build": "webpack --mode production",
