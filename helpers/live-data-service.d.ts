@@ -35,6 +35,7 @@ declare class LiveDataService {
     private currentStatus;
     private refCount;
     private retryCount;
+    private consecutiveFailures;
     private reconnectTimer;
     private closeTimer;
     private buffer;
