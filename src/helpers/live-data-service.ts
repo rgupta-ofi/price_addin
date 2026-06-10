@@ -45,6 +45,7 @@ class LiveDataService {
   private currentStatus = "Disconnected";
   private refCount = 0;
   private retryCount = 0;
+  private consecutiveFailures = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
   private buffer: LiveDataSnapshot = {};
@@ -120,6 +121,7 @@ class LiveDataService {
     ws.onopen = () => {
       if (this.ws !== ws) return;
       this.retryCount = 0;
+      this.consecutiveFailures = 0;
       console.log("[WS] Connected");
       this.setStatus("Connected");
     };
@@ -144,7 +146,12 @@ class LiveDataService {
     };
 
     const onFail = () => {
-      this.setStatus("Error / Reconnecting");
+      this.consecutiveFailures += 1;
+      this.setStatus(
+        this.consecutiveFailures >= 3
+          ? "Connection failed: backend rejected live stream"
+          : "Error / Reconnecting"
+      );
       if (this.ws !== ws) { ws.close(); return; }
       this.ws = null;
       ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
@@ -190,6 +197,7 @@ class LiveDataService {
       if (this.refCount > 0) return;
       if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
       this.retryCount = 0;
+      this.consecutiveFailures = 0;
       if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
       const ws = this.ws; this.ws = null;
       if (ws && ws.readyState !== WebSocket.CLOSED) ws.close();
