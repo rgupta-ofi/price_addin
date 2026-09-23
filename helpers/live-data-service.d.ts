@@ -50,6 +50,9 @@ declare class LiveDataService {
     unsubscribe(fn: LiveDataListener): void;
     private ensureConnected;
     private pollLiveFx;
+    private fetchLiveFxJson;
+    private parseLiveFxResponse;
+    private fetchLiveFxJsonWithXhr;
     private getAuthToken;
     private handleLiveFx;
     private getLiveFxRows;
