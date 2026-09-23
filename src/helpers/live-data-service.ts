@@ -151,20 +151,7 @@ class LiveDataService {
     this.activeRequest = controller;
     this.setStatus("Fetching live FX data");
 
-    fetch(url, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-      signal: controller.signal,
-    })
-      .then(async response => {
-        if (response.status === 401 || response.status === 403) {
-          throw new Error("AUTH_REJECTED");
-        }
-        if (!response.ok) {
-          throw new Error(`HTTP_${response.status}`);
-        }
-        return response.json() as Promise<LiveFxResponse>;
-      })
+    this.fetchLiveFxJson(url, token, controller.signal)
       .then(payload => this.handleLiveFx(payload))
       .catch(error => {
         if (controller.signal.aborted) return;
@@ -179,6 +166,75 @@ class LiveDataService {
         if (this.activeRequest === controller) this.activeRequest = null;
         this.scheduleNextPoll();
       });
+  }
+
+  private async fetchLiveFxJson(url: string, token: string, signal: AbortSignal): Promise<LiveFxResponse> {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      });
+      return await this.parseLiveFxResponse(response);
+    } catch (error) {
+      if (signal.aborted) throw error;
+      return this.fetchLiveFxJsonWithXhr(url, token, signal);
+    }
+  }
+
+  private async parseLiveFxResponse(response: Response): Promise<LiveFxResponse> {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("AUTH_REJECTED");
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP_${response.status}`);
+    }
+    return response.json() as Promise<LiveFxResponse>;
+  }
+
+  private fetchLiveFxJsonWithXhr(url: string, token: string, signal: AbortSignal): Promise<LiveFxResponse> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const abort = () => {
+        xhr.abort();
+        reject(new Error("ABORTED"));
+      };
+
+      if (signal.aborted) {
+        reject(new Error("ABORTED"));
+        return;
+      }
+
+      signal.addEventListener("abort", abort, { once: true });
+      xhr.open("GET", url, true);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.onload = () => {
+        signal.removeEventListener("abort", abort);
+        if (xhr.status === 401 || xhr.status === 403) {
+          reject(new Error("AUTH_REJECTED"));
+          return;
+        }
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(new Error(`HTTP_${xhr.status}`));
+          return;
+        }
+        try {
+          resolve(JSON.parse(xhr.responseText) as LiveFxResponse);
+        } catch {
+          reject(new Error("INVALID_JSON"));
+        }
+      };
+      xhr.onerror = () => {
+        signal.removeEventListener("abort", abort);
+        reject(new Error("XHR_NETWORK_ERROR"));
+      };
+      xhr.ontimeout = () => {
+        signal.removeEventListener("abort", abort);
+        reject(new Error("XHR_TIMEOUT"));
+      };
+      xhr.timeout = 15_000;
+      xhr.send();
+    });
   }
 
   private getAuthToken(): string | null {

@@ -343,6 +343,24 @@ async function fetchStatus(url: string, token?: string): Promise<string> {
   }
 }
 
+async function xhrStatus(url: string, token?: string): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.onload = () => resolve(`HTTP ${xhr.status}: ${xhr.responseText.slice(0, 120)}`);
+      xhr.onerror = () => resolve("failed: XHR_NETWORK_ERROR");
+      xhr.ontimeout = () => resolve("failed: XHR_TIMEOUT");
+      xhr.timeout = 15_000;
+      xhr.send();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      resolve(`failed: ${message}`);
+    }
+  });
+}
+
 async function fetchProbe(url: string, mode: RequestMode): Promise<string> {
   try {
     const response = await fetch(url, {
@@ -393,9 +411,10 @@ async function diagnostics(): Promise<string> {
   const noCorsProbe = await fetchProbe(url, "no-cors");
   const anonymousStatus = await fetchStatus(url);
   const authorizedStatus = await fetchStatus(url, token);
+  const xhrAuthorizedStatus = await xhrStatus(url, token);
   const runtime = typeof navigator === "undefined" ? "unknown runtime" : navigator.userAgent.slice(0, 100);
 
-  return `Diagnostics v4. ${tokenDetails} Origin: ${origin}. API: ${Config.serverUrl}. Same-origin: ${sameOriginStatus}. Infinity no-cors: ${noCorsProbe}. No-auth: ${anonymousStatus}. Auth: ${authorizedStatus}. Runtime: ${runtime}`;
+  return `Diagnostics v5. ${tokenDetails} Origin: ${origin}. API: ${Config.serverUrl}. Same-origin: ${sameOriginStatus}. Infinity no-cors: ${noCorsProbe}. No-auth: ${anonymousStatus}. Fetch auth: ${authorizedStatus}. XHR auth: ${xhrAuthorizedStatus}. Runtime: ${runtime}`;
 }
 
 // Register
@@ -407,5 +426,5 @@ CustomFunctions.associate("DIAGNOSTICS", diagnostics);
 
 // Initialize Office.js
 Office.onReady(() => {
-  console.log("Infinity Custom Functions loaded - v4");
+  console.log("Infinity Custom Functions loaded - v5");
 });
