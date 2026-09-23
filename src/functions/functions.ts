@@ -395,7 +395,7 @@ async function diagnostics(): Promise<string> {
   const authorizedStatus = await fetchStatus(url, token);
   const runtime = typeof navigator === "undefined" ? "unknown runtime" : navigator.userAgent.slice(0, 100);
 
-  return `Diagnostics v3. ${tokenDetails} Origin: ${origin}. Same-origin: ${sameOriginStatus}. Infinity no-cors: ${noCorsProbe}. No-auth: ${anonymousStatus}. Auth: ${authorizedStatus}. Runtime: ${runtime}`;
+  return `Diagnostics v4. ${tokenDetails} Origin: ${origin}. API: ${Config.serverUrl}. Same-origin: ${sameOriginStatus}. Infinity no-cors: ${noCorsProbe}. No-auth: ${anonymousStatus}. Auth: ${authorizedStatus}. Runtime: ${runtime}`;
 }
 
 // Register
