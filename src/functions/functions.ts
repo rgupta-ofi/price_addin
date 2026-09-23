@@ -2,9 +2,9 @@
  * Excel Custom Functions — Live market signal formulas.
  *
  * Usage:
- *   =INFINITY.LIVEPRICE("spot", "RATE")
- *   =INFINITY.LIVEPRICE("1m", "RATE")
- *   =INFINITY.FIELDS("spot")
+ *   =INFINITY.LIVEPRICE("gbp-usd", "MID")
+ *   =INFINITY.LIVEPRICE("usd-jpy", "BID")
+ *   =INFINITY.FIELDS("gbp-usd")
  *
  * Polling starts automatically when the first formula is entered
  * and stops when the last formula is removed.
@@ -24,7 +24,7 @@ interface CellHandler {
 /** All active streaming cells, keyed by a unique random ID (for cancellation) */
 const cells = new Map<string, CellHandler>();
 
-/** Cells grouped by their resolved canonical ticker key (e.g. "cc1") */
+/** Cells grouped by their resolved canonical ticker key (e.g. "gbp-usd") */
 const cellsByKey = new Map<string, Set<CellHandler>>();
 
 /** Cells that haven't been resolved to a canonical key yet */
@@ -37,10 +37,10 @@ let latestStatus = "Disconnected";
 /** Accumulated latest values for every ticker we've ever seen */
 const latestData: Record<string, TickerRecord> = {};
 
-/** Reverse lookup: Security ID (e.g. "USDJPY") → ticker key (e.g. "usd-jpy") */
+/** Reverse lookup: Security ID (e.g. "USDJPY") -> ticker key (e.g. "usd-jpy") */
 const secIdToTicker = new Map<string, string>();
 
-/** Case-insensitive lookup: "CC1" → "cc1" */
+/** Case-insensitive lookup: "GBP-USD" -> "gbp-usd" */
 const canonicalKeys = new Map<string, string>();
 // Seed the special key so resolveTickerKey works
 canonicalKeys.set("_ALL_TICKERS_", "_ALL_TICKERS_");

@@ -37,14 +37,34 @@ export type LiveDataListener = (snapshot: LiveDataSnapshot) => void;
 export type StatusListener = (status: string) => void;
 
 interface LiveFxRow {
-  tenor: string;
-  rate: number | null;
+  tenor?: string | null;
+  ticker?: string | null;
+  value?: string | null;
+  name?: string | null;
+  pair?: string | null;
+  currency_pair?: string | null;
+  ccy_pair?: string | null;
+  rate?: number | string | null;
+  mid?: number | string | null;
+  prevMid?: number | string | null;
+  bid?: number | string | null;
+  ask?: number | string | null;
+  last?: number | string | null;
+  lastPrice?: number | string | null;
+  last_price?: number | string | null;
   method?: string | null;
   as_of?: string | null;
+  asOf?: string | null;
+  time?: string | null;
+  lastChangedAt?: string | number | null;
+  [key: string]: unknown;
 }
 
+type LiveFxRows = LiveFxRow[] | Record<string, LiveFxRow>;
+
 interface LiveFxResponse {
-  data?: LiveFxRow[];
+  data?: LiveFxRows;
+  [key: string]: unknown;
 }
 
 // ─── LiveDataService ────────────────────────────────────────────────────────
@@ -173,25 +193,38 @@ class LiveDataService {
   }
 
   private handleLiveFx(payload: LiveFxResponse): void {
-    const rows = Array.isArray(payload.data) ? payload.data : [];
+    const rows = this.getLiveFxRows(payload);
     const snapshot: LiveDataSnapshot = {};
 
     for (const row of rows) {
-      if (!row.tenor) continue;
-      const tenor = row.tenor.toLowerCase();
-      snapshot[tenor] = {
+      const ticker = this.getTickerKey(row);
+      if (!ticker) continue;
+
+      const rate = this.toNumber(row.rate ?? row.mid);
+      const mid = this.toNumber(row.mid ?? row.rate);
+      const bid = this.toNumber(row.bid);
+      const ask = this.toNumber(row.ask);
+      const last = this.toNumber(row.last ?? row.lastPrice ?? row.last_price);
+
+      snapshot[ticker.toLowerCase()] = {
         result: {
-          ID_BB_SEC_NUMBER_DESCRIPTION_RT: row.tenor,
+          ID_BB_SEC_NUMBER_DESCRIPTION_RT: ticker,
           RATE: row.rate,
-          MID: row.rate ?? undefined,
+          MID: mid ?? undefined,
+          BID: bid ?? undefined,
+          ASK: ask ?? undefined,
+          LAST_PRICE: last ?? undefined,
+          PREV_MID: this.toNumber(row.prevMid) ?? undefined,
           METHOD: row.method ?? undefined,
-          AS_OF: row.as_of ?? undefined,
+          AS_OF: row.as_of ?? row.asOf ?? row.time ?? row.lastChangedAt ?? undefined,
         },
       };
+
+      if (rate !== null) snapshot[ticker.toLowerCase()].result.RATE = rate;
     }
 
     if (!Object.keys(snapshot).length) {
-      this.setStatus("No live FX data returned");
+      this.setStatus("No recognized live FX data returned");
       return;
     }
 
@@ -199,6 +232,37 @@ class LiveDataService {
     for (const [key, record] of Object.entries(snapshot)) this.buffer[key] = record;
     this.bufferDirty = true;
     this.scheduleFlush();
+  }
+
+  private getLiveFxRows(payload: LiveFxResponse | LiveFxRow[] | Record<string, LiveFxRow>): LiveFxRow[] {
+    const source = Array.isArray(payload) ? payload : payload.data ?? payload;
+    if (Array.isArray(source)) return source;
+    if (!source || typeof source !== "object") return [];
+
+    return Object.entries(source).map(([key, value]) => ({ ticker: key, ...(value || {}) }));
+  }
+
+  private getTickerKey(row: LiveFxRow): string | null {
+    const raw =
+      row.tenor ??
+      row.ticker ??
+      row.value ??
+      row.pair ??
+      row.currency_pair ??
+      row.ccy_pair ??
+      row.name;
+
+    if (typeof raw !== "string") return null;
+    const normalized = raw.trim().replace("/", "-").toLowerCase();
+    return normalized || null;
+  }
+
+  private toNumber(value: unknown): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value !== "string") return null;
+
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   // ─── Buffer ──────────────────────────────────────────────────────────────
