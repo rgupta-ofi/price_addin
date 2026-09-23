@@ -52,6 +52,9 @@ declare class LiveDataService {
     private pollLiveFx;
     private getAuthToken;
     private handleLiveFx;
+    private getLiveFxRows;
+    private getTickerKey;
+    private toNumber;
     private scheduleFlush;
     private scheduleNextPoll;
     private scheduleClose;

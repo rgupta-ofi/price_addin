@@ -2,9 +2,9 @@
  * Excel Custom Functions — Live market signal formulas.
  *
  * Usage:
- *   =INFINITY.LIVEPRICE("spot", "RATE")
- *   =INFINITY.LIVEPRICE("1m", "RATE")
- *   =INFINITY.FIELDS("spot")
+ *   =INFINITY.LIVEPRICE("gbp-usd", "MID")
+ *   =INFINITY.LIVEPRICE("usd-jpy", "BID")
+ *   =INFINITY.FIELDS("gbp-usd")
  *
  * Polling starts automatically when the first formula is entered
  * and stops when the last formula is removed.
