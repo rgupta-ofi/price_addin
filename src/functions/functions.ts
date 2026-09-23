@@ -32,6 +32,7 @@ const pendingCells = new Set<CellHandler>();
 
 let connected = false;
 let listenerAttached = false;
+let latestStatus = "Disconnected";
 
 /** Accumulated latest values for every ticker we've ever seen */
 const latestData: Record<string, TickerRecord> = {};
@@ -174,9 +175,17 @@ function ensureService(): void {
   if (!listenerAttached) {
     liveDataService.subscribe(onSnapshot);
     liveDataService.addStatusListener((status) => {
+        latestStatus = status;
         // Broadcast status to all pending cells
         for (const handler of pendingCells) {
             handler.setResult(`Waiting... (${status})`);
+        }
+
+        const tickerWatchers = cellsByKey.get("_ALL_TICKERS_");
+        if (tickerWatchers && !hasLiveTickers()) {
+          for (const handler of tickerWatchers) {
+            handler.setResult(`Waiting... (${status})`);
+          }
         }
     });
 
@@ -186,6 +195,10 @@ function ensureService(): void {
     liveDataService.acquire();
     connected = true;
   }
+}
+
+function hasLiveTickers(): boolean {
+  return Object.keys(latestData).length > 0;
 }
 
 // ─── Custom Functions ───────────────────────────────────────────────────────
@@ -218,7 +231,7 @@ function startStreaming(
         const allKeys = Array.from(canonicalKeys.values())
              .filter(k => k !== "_ALL_TICKERS_")
              .sort().join(", ");
-        handler.setResult(allKeys || "Waiting for data...");
+      handler.setResult(allKeys || `Waiting... (${latestStatus})`);
     } else {
         const rec = latestData[key];
         if (rec) {

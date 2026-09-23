@@ -7,7 +7,7 @@
   xsi:type="TaskPaneApp">
 
   <Id>af8e3b00-1234-4567-89ab-cdef01234567</Id>
-  <Version>2.3.0.0</Version>
+  <Version>2.4.0.0</Version>
   <ProviderName>Infinity</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Infinity Live Prices"/>
@@ -63,9 +63,9 @@
         <bt:Image id="Icon.80x80" DefaultValue="https://rgupta-ofi.github.io/price_addin/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Functions.Script.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.js?v=token-cleanup-1"/>
-        <bt:Url id="Functions.Page.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.html?v=token-cleanup-1"/>
-        <bt:Url id="Functions.Metadata.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.json?v=token-cleanup-1"/>
+        <bt:Url id="Functions.Script.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.js?v=status-diagnostics-1"/>
+        <bt:Url id="Functions.Page.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.html?v=status-diagnostics-1"/>
+        <bt:Url id="Functions.Metadata.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.json?v=status-diagnostics-1"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Functions.Namespace" DefaultValue="INFINITY"/>
