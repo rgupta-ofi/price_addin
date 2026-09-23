@@ -1,13 +1,13 @@
 /**
- * Excel Custom Functions — Live-streaming price formulas.
+ * Excel Custom Functions — Live market signal formulas.
  *
  * Usage:
- *   =INFINITY.LIVEPRICE("cc1", "MID")
- *   =INFINITY.LIVEPRICE("usd-jpy", "BID")
- *   =INFINITY.LIVEPRICE("USDJPY", "ASK")     ← also matches by Security ID
+ *   =INFINITY.LIVEPRICE("spot", "RATE")
+ *   =INFINITY.LIVEPRICE("1m", "RATE")
+ *   =INFINITY.FIELDS("spot")
  *
- * The WebSocket connects automatically when the first formula is entered
- * and disconnects when the last formula is removed. No sign-in required.
+ * Polling starts automatically when the first formula is entered
+ * and stops when the last formula is removed.
  */
 export {};
 //# sourceMappingURL=functions.d.ts.map

@@ -1,13 +1,13 @@
 /**
- * LiveDataService — Singleton WebSocket client for streaming live price data.
+ * LiveDataService — Singleton client for streaming live price data.
  *
- * Connects to the server's WebSocket endpoint, coalesces rapid updates into
+ * Polls the Infinity live FX endpoint, coalesces rapid updates into
  * batched snapshots, and notifies all subscribed listeners.
  *
  * Features:
  *   - Reference-counted acquire/release for clean lifecycle
  *   - Coalescing buffer to avoid flooding Excel with per-tick updates
- *   - Exponential back-off reconnection
+ *   - Auth-aware HTTP polling
  *   - Network-aware (online/offline)
  */
 export interface TickerResult {
@@ -29,18 +29,16 @@ export type LiveDataSnapshot = Record<string, TickerRecord>;
 export type LiveDataListener = (snapshot: LiveDataSnapshot) => void;
 export type StatusListener = (status: string) => void;
 declare class LiveDataService {
-    private ws;
     private listeners;
     private statusListeners;
     private currentStatus;
     private refCount;
-    private retryCount;
-    private consecutiveFailures;
-    private reconnectTimer;
+    private pollTimer;
     private closeTimer;
     private buffer;
     private bufferDirty;
     private flushTimer;
+    private activeRequest;
     constructor();
     getStatus(): string;
     addStatusListener(fn: StatusListener): void;
@@ -51,9 +49,11 @@ declare class LiveDataService {
     subscribe(fn: LiveDataListener): void;
     unsubscribe(fn: LiveDataListener): void;
     private ensureConnected;
-    private connect;
+    private pollLiveFx;
+    private getAuthToken;
+    private handleLiveFx;
     private scheduleFlush;
-    private scheduleReconnect;
+    private scheduleNextPoll;
     private scheduleClose;
     private clearCloseTimer;
     private onOnline;
