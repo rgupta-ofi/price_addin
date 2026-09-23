@@ -343,6 +343,21 @@ async function fetchStatus(url: string, token?: string): Promise<string> {
   }
 }
 
+async function fetchProbe(url: string, mode: RequestMode): Promise<string> {
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "omit",
+      cache: "no-store",
+      mode,
+    });
+    return `${response.type || "response"} ${response.status}`;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return `failed: ${message}`;
+  }
+}
+
 /**
  * @customfunction SETTOKEN
  * @description Saves the Infinity API bearer token in this Excel add-in runtime.
@@ -372,12 +387,15 @@ async function diagnostics(): Promise<string> {
   const tokenDetails = describeToken(token);
   const url = `${Config.serverUrl}${Config.liveFxPath}`;
   const origin = typeof location === "undefined" ? "unknown origin" : location.origin;
+  const sameOriginUrl = `${origin}/price_addin/functions.json`;
 
+  const sameOriginStatus = await fetchProbe(sameOriginUrl, "cors");
+  const noCorsProbe = await fetchProbe(url, "no-cors");
   const anonymousStatus = await fetchStatus(url);
   const authorizedStatus = await fetchStatus(url, token);
   const runtime = typeof navigator === "undefined" ? "unknown runtime" : navigator.userAgent.slice(0, 100);
 
-  return `${tokenDetails} Origin: ${origin}. No-auth: ${anonymousStatus}. Auth: ${authorizedStatus}. Runtime: ${runtime}`;
+  return `Diagnostics v3. ${tokenDetails} Origin: ${origin}. Same-origin: ${sameOriginStatus}. Infinity no-cors: ${noCorsProbe}. No-auth: ${anonymousStatus}. Auth: ${authorizedStatus}. Runtime: ${runtime}`;
 }
 
 // Register
