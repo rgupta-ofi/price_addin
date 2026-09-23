@@ -326,6 +326,23 @@ function describeToken(token: string): string {
   return `Token chars: ${token.length}. JWT segments: ${jwtSegmentCount}. Invalid JWT chars: ${invalidJwtChars}.`;
 }
 
+async function fetchStatus(url: string, token?: string): Promise<string> {
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      credentials: "omit",
+      cache: "no-store",
+      mode: "cors",
+    });
+    const text = await response.text();
+    return `HTTP ${response.status}: ${text.slice(0, 120)}`;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return `failed: ${message}`;
+  }
+}
+
 /**
  * @customfunction SETTOKEN
  * @description Saves the Infinity API bearer token in this Excel add-in runtime.
@@ -353,27 +370,14 @@ async function diagnostics(): Promise<string> {
   if (!token) return "No token saved. Run INFINITY.SETTOKEN first.";
 
   const tokenDetails = describeToken(token);
+  const url = `${Config.serverUrl}${Config.liveFxPath}`;
+  const origin = typeof location === "undefined" ? "unknown origin" : location.origin;
 
-  try {
-    const response = await fetch(`${Config.serverUrl}${Config.liveFxPath}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: "omit",
-      cache: "no-store",
-    });
+  const anonymousStatus = await fetchStatus(url);
+  const authorizedStatus = await fetchStatus(url, token);
+  const runtime = typeof navigator === "undefined" ? "unknown runtime" : navigator.userAgent.slice(0, 100);
 
-    const text = await response.text();
-    if (!response.ok) {
-      return `${tokenDetails} API HTTP ${response.status}: ${text.slice(0, 160)}`;
-    }
-
-    const payload = JSON.parse(text) as { data?: unknown[] };
-    return `Connected. ${tokenDetails} Rows: ${Array.isArray(payload.data) ? payload.data.length : 0}.`;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const runtime = typeof navigator === "undefined" ? "unknown runtime" : navigator.userAgent.slice(0, 120);
-    return `${tokenDetails} Fetch failed: ${message}. Runtime: ${runtime}`;
-  }
+  return `${tokenDetails} Origin: ${origin}. No-auth: ${anonymousStatus}. Auth: ${authorizedStatus}. Runtime: ${runtime}`;
 }
 
 // Register
