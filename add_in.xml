@@ -17,7 +17,7 @@
   <SupportUrl DefaultValue="https://github.com/rgupta-ofi/price_addin"/>
 
   <AppDomains>
-    <AppDomain>https://infinity-qa.ofi.ai</AppDomain>
+    <AppDomain>https://infinity.ofi.ai</AppDomain>
   </AppDomains>
 
   <Hosts>

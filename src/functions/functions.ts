@@ -1,13 +1,13 @@
 /**
- * Excel Custom Functions — Live-streaming price formulas.
+ * Excel Custom Functions — Live market signal formulas.
  *
  * Usage:
- *   =INFINITY.LIVEPRICE("cc1", "MID")
- *   =INFINITY.LIVEPRICE("usd-jpy", "BID")
- *   =INFINITY.LIVEPRICE("USDJPY", "ASK")     ← also matches by Security ID
+ *   =INFINITY.LIVEPRICE("spot", "RATE")
+ *   =INFINITY.LIVEPRICE("1m", "RATE")
+ *   =INFINITY.FIELDS("spot")
  *
- * The WebSocket connects automatically when the first formula is entered
- * and disconnects when the last formula is removed. No sign-in required.
+ * Polling starts automatically when the first formula is entered
+ * and stops when the last formula is removed.
  */
 
 import { liveDataService, LiveDataSnapshot, TickerRecord } from "../helpers/live-data-service";
@@ -254,9 +254,9 @@ function startStreaming(
 /**
  * @customfunction LIVEPRICE
  * @streaming
- * @description Returns a live-streaming price field for the given ticker.
- * @param {string} ticker The ticker key (e.g. "cc1", "usd-jpy") or security ID (e.g. "CCH6", "USDJPY").
- * @param {string} field The field to return: MID, BID, ASK, LAST_PRICE, OPEN, HIGH, LOW, VOLUME.
+ * @description Returns a live FX market signal field for the given tenor.
+ * @param {string} ticker The FX tenor (e.g. "spot", "1m", "2m", "3m").
+ * @param {string} field The field to return: RATE, MID, METHOD, AS_OF.
  * @param {CustomFunctions.StreamingInvocation<string | number>} invocation
  */
 function livePrice(
@@ -271,7 +271,7 @@ function livePrice(
  * @customfunction FIELDS
  * @streaming
  * @description Returns a list of all available data fields for a ticker.
- * @param {string} ticker The ticker key (e.g. "cc1", "usd-jpy") or security ID (e.g. "CCH6", "USDJPY").
+ * @param {string} ticker The FX tenor (e.g. "spot", "1m", "2m", "3m").
  * @param {CustomFunctions.StreamingInvocation<string>} invocation
  */
 function getFields(
@@ -286,7 +286,7 @@ function getFields(
 /**
  * @customfunction TICKERS
  * @streaming
- * @description Returns a list of all commodity tickers currently streaming (e.g., CC1, USDJPY).
+ * @description Returns a list of all live FX tenors currently returned by Infinity.
  * @param {CustomFunctions.StreamingInvocation<string>} invocation
  */
 function getTickers(

@@ -1,6 +1,8 @@
 # Infinity Live Prices Excel Add-in Guide
 
-Welcome to the Infinity Live Prices Add-in! This tool allows you to stream real-time commodity prices directly into your Excel cells using a simple custom formula — no side panels, no manual refreshing, and no complex sign-ins required.
+Welcome to the Infinity Live Prices Add-in! This tool allows you to stream live Infinity market signals directly into your Excel cells using a simple custom formula.
+
+The current Infinity platform exposes live FX rates through an authenticated HTTPS API. The add-in reads a bearer token from browser storage key `INFINITY_API_TOKEN`; if no token is present, formulas show `Waiting... (Authentication required: set INFINITY_API_TOKEN)`.
 
 ## Part 1: How to Install the Add-in
 
@@ -32,24 +34,23 @@ The magic formula is:
 **`=INFINITY.LIVEPRICE(ticker, field)`**
 
 ### Understanding the Inputs
-1. **Ticker:** The ID of the commodity or security. You can use:
-   - The exact Bloomberg Security ID (e.g., `"USDJPY"`, `"CCH6"`)
-   - The Infinity internal API key (e.g., `"usd-jpy"`, `"cc1"`)
+1. **Ticker:** The live FX tenor returned by Infinity. You can use:
+  - `"spot"`, `"1m"`, `"2m"`, `"3m"`, and any other tenor returned by the API
+  - The display tenor value returned by `=INFINITY.TICKERS()`
    - *Note: Tickers are not case-sensitive.*
 2. **Field:** The specific data point you want to stream. Supported fields include:
-   - MID, BID, ASK
-   - LAST_PRICE
-   - OPEN, HIGH, LOW
-   - VOLUME
+  - RATE or MID
+  - METHOD
+  - AS_OF
 
 ### Examples
 Pick any blank cell and type:
 
-* To get the live Mid price of CC1:
-  `=INFINITY.LIVEPRICE("cc1", "MID")`
+* To get the live spot FX rate:
+  `=INFINITY.LIVEPRICE("spot", "RATE")`
 
-* To get the live Ask price of USD/JPY:
-  `=INFINITY.LIVEPRICE("USDJPY", "ASK")`
+* To get the live 1-month FX rate:
+  `=INFINITY.LIVEPRICE("1m", "RATE")`
 
 ### What to Expect
 1. When you hit Enter, the cell might momentarily display #BUSY! or Waiting... as it connects to the live server.
@@ -61,5 +62,6 @@ Pick any blank cell and type:
 ## Troubleshooting
 
 - **#NAME? error:** This means Excel hasn't loaded the add-in. Go back to Insert > Add-ins and make sure "Infinity Live Prices" is in your list.
-- **#BUSY! or Waiting... never resolves:** Ensure you have internet access and that your network doesn't block WebSockets. (Ensure the text ticker isn't misspelled).
+- **Waiting... (Authentication required: set INFINITY_API_TOKEN):** The current Infinity API requires a bearer token. Sign in through the approved flow or set the token directly in the add-in browser context for testing only. Do not store tokens in the repository.
+- **Waiting... never resolves:** Ensure you have internet access and that the ticker matches a tenor returned by `=INFINITY.TICKERS()`.
 - **No Autocomplete?** Just type out the full `=INFINITY.LIVEPRICE(..)` formula completely and hit Enter. Excel sometimes drops custom autocomplete but the formula will still execute perfectly over the streaming engine.
