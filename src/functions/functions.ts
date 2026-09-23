@@ -312,6 +312,14 @@ function getTickers(
   startStreaming("_ALL_TICKERS_", "_ALL_TICKERS_", invocation as any);
 }
 
+function cleanToken(token: string): string {
+  return token
+    .trim()
+    .replace(/^[']|[']$/g, "")
+    .replace(/^Bearer\s+/i, "")
+    .replace(/\s+/g, "");
+}
+
 /**
  * @customfunction SETTOKEN
  * @description Saves the Infinity API bearer token in this Excel add-in runtime.
@@ -319,14 +327,42 @@ function getTickers(
  * @returns A confirmation message.
  */
 function setToken(token: string): string {
-  const cleaned = token
-    .trim()
-    .replace(/^['"]|['"]$/g, "")
-    .replace(/^Bearer\s+/i, "")
-    .replace(/\s+/g, "");
+  const cleaned = cleanToken(token);
   if (!cleaned) return "Token was empty";
   localStorage.setItem(Config.authTokenStorageKey, cleaned);
-  return "Infinity token saved. Recalculate LIVEPRICE formulas.";
+  return `Infinity token saved (${cleaned.length} chars). Recalculate LIVEPRICE formulas.`;
+}
+
+/**
+ * @customfunction DIAGNOSTICS
+ * @description Checks the saved token and Infinity live FX API from this Excel runtime.
+ * @returns A diagnostic status message.
+ */
+async function diagnostics(): Promise<string> {
+  const rawToken = typeof localStorage === "undefined"
+    ? ""
+    : localStorage.getItem(Config.authTokenStorageKey) || "";
+
+  const token = cleanToken(rawToken);
+  if (!token) return "No token saved. Run INFINITY.SETTOKEN first.";
+
+  try {
+    const response = await fetch(`${Config.serverUrl}${Config.liveFxPath}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+      return `Token chars: ${token.length}. API HTTP ${response.status}: ${text.slice(0, 180)}`;
+    }
+
+    const payload = JSON.parse(text) as { data?: unknown[] };
+    return `Connected. Token chars: ${token.length}. Rows: ${Array.isArray(payload.data) ? payload.data.length : 0}.`;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return `Token chars: ${token.length}. Fetch failed: ${message}`;
+  }
 }
 
 // Register
@@ -334,6 +370,7 @@ CustomFunctions.associate("LIVEPRICE", livePrice);
 CustomFunctions.associate("FIELDS", getFields);
 CustomFunctions.associate("TICKERS", getTickers);
 CustomFunctions.associate("SETTOKEN", setToken);
+CustomFunctions.associate("DIAGNOSTICS", diagnostics);
 
 // Initialize Office.js
 Office.onReady(() => {

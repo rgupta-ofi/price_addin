@@ -166,7 +166,7 @@ class LiveDataService {
     const token = localStorage.getItem(Config.authTokenStorageKey);
     const cleaned = token
       ?.trim()
-      .replace(/^['"]|['"]$/g, "")
+      .replace(/^[']|[']$/g, "")
       .replace(/^Bearer\s+/i, "")
       .replace(/\s+/g, "");
     return cleaned || null;
