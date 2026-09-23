@@ -11,6 +11,7 @@
  */
 
 import { liveDataService, LiveDataSnapshot, TickerRecord } from "../helpers/live-data-service";
+import { Config } from "../helpers/config";
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -298,10 +299,24 @@ function getTickers(
   startStreaming("_ALL_TICKERS_", "_ALL_TICKERS_", invocation as any);
 }
 
+/**
+ * @customfunction SETTOKEN
+ * @description Saves the Infinity API bearer token in this Excel add-in runtime.
+ * @param {string} token The bearer token value without the leading "Bearer ".
+ * @returns A confirmation message.
+ */
+function setToken(token: string): string {
+  const cleaned = token.replace(/^Bearer\s+/i, "").trim();
+  if (!cleaned) return "Token was empty";
+  localStorage.setItem(Config.authTokenStorageKey, cleaned);
+  return "Infinity token saved. Recalculate LIVEPRICE formulas.";
+}
+
 // Register
 CustomFunctions.associate("LIVEPRICE", livePrice);
 CustomFunctions.associate("FIELDS", getFields);
 CustomFunctions.associate("TICKERS", getTickers);
+CustomFunctions.associate("SETTOKEN", setToken);
 
 // Initialize Office.js
 Office.onReady(() => {

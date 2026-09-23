@@ -4,7 +4,7 @@
  */
 export const Config = {
   /** Base URL of the Infinity API server */
-  serverUrl: process.env.SERVER_URL || "https://infinity.ofi.ai",
+  serverUrl: "https://infinity.ofi.ai",
 
   /** Legacy WebSocket path for live data */
   wsPath: "/api/realtime/live-data/all",
