@@ -164,7 +164,12 @@ class LiveDataService {
   private getAuthToken(): string | null {
     if (typeof localStorage === "undefined") return null;
     const token = localStorage.getItem(Config.authTokenStorageKey);
-    return token?.trim() || null;
+    const cleaned = token
+      ?.trim()
+      .replace(/^['"]|['"]$/g, "")
+      .replace(/^Bearer\s+/i, "")
+      .replace(/\s+/g, "");
+    return cleaned || null;
   }
 
   private handleLiveFx(payload: LiveFxResponse): void {

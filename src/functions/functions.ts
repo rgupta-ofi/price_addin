@@ -306,7 +306,11 @@ function getTickers(
  * @returns A confirmation message.
  */
 function setToken(token: string): string {
-  const cleaned = token.replace(/^Bearer\s+/i, "").trim();
+  const cleaned = token
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/^Bearer\s+/i, "")
+    .replace(/\s+/g, "");
   if (!cleaned) return "Token was empty";
   localStorage.setItem(Config.authTokenStorageKey, cleaned);
   return "Infinity token saved. Recalculate LIVEPRICE formulas.";
