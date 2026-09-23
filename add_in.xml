@@ -63,9 +63,9 @@
         <bt:Image id="Icon.80x80" DefaultValue="https://rgupta-ofi.github.io/price_addin/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Functions.Script.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.js?v=diagnostics-function-1"/>
-        <bt:Url id="Functions.Page.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.html?v=diagnostics-function-1"/>
-        <bt:Url id="Functions.Metadata.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.json?v=diagnostics-function-1"/>
+        <bt:Url id="Functions.Script.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.js"/>
+        <bt:Url id="Functions.Page.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.html"/>
+        <bt:Url id="Functions.Metadata.Url" DefaultValue="https://rgupta-ofi.github.io/price_addin/functions.json"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Functions.Namespace" DefaultValue="INFINITY"/>
