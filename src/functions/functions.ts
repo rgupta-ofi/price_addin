@@ -315,9 +315,15 @@ function getTickers(
 function cleanToken(token: string): string {
   return token
     .trim()
-    .replace(/^[']|[']$/g, "")
+    .replace(/^["']|["']$/g, "")
     .replace(/^Bearer\s+/i, "")
     .replace(/\s+/g, "");
+}
+
+function describeToken(token: string): string {
+  const jwtSegmentCount = token.split(".").length;
+  const invalidJwtChars = token.match(/[^A-Za-z0-9._-]/g)?.length || 0;
+  return `Token chars: ${token.length}. JWT segments: ${jwtSegmentCount}. Invalid JWT chars: ${invalidJwtChars}.`;
 }
 
 /**
@@ -346,22 +352,27 @@ async function diagnostics(): Promise<string> {
   const token = cleanToken(rawToken);
   if (!token) return "No token saved. Run INFINITY.SETTOKEN first.";
 
+  const tokenDetails = describeToken(token);
+
   try {
     const response = await fetch(`${Config.serverUrl}${Config.liveFxPath}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
+      credentials: "omit",
+      cache: "no-store",
     });
 
     const text = await response.text();
     if (!response.ok) {
-      return `Token chars: ${token.length}. API HTTP ${response.status}: ${text.slice(0, 180)}`;
+      return `${tokenDetails} API HTTP ${response.status}: ${text.slice(0, 160)}`;
     }
 
     const payload = JSON.parse(text) as { data?: unknown[] };
-    return `Connected. Token chars: ${token.length}. Rows: ${Array.isArray(payload.data) ? payload.data.length : 0}.`;
+    return `Connected. ${tokenDetails} Rows: ${Array.isArray(payload.data) ? payload.data.length : 0}.`;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return `Token chars: ${token.length}. Fetch failed: ${message}`;
+    const runtime = typeof navigator === "undefined" ? "unknown runtime" : navigator.userAgent.slice(0, 120);
+    return `${tokenDetails} Fetch failed: ${message}. Runtime: ${runtime}`;
   }
 }
 
